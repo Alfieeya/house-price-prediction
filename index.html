@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>House Price Estimator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #241f2e;
+    --paper-dark: #1c1824;
+    --ink: #e9e4f0;
+    --ink-soft: #a99fbd;
+    --brass: #b48cd9;
+    --brass-dark: #c9a3ef;
+    --stamp: #d1706f;
+    --card: #2c2637;
+    --line: #423a52;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+  }
+
+  body {
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(236,229,214,0.025) 28px);
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 56px 24px 100px;
+  }
+
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 22px;
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-dark);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(28px, 6vw, 46px);
+    line-height: 1.05;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .file-no {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: right;
+  }
+
+  .intro {
+    font-size: 15.5px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin-bottom: 44px;
+  }
+
+  .intro strong { color: var(--ink); font-weight: 600; }
+
+  .sheet {
+    background: var(--card);
+    border: 1px solid var(--line);
+    box-shadow: 0 1px 0 var(--line), 0 18px 40px -28px rgba(0,0,0,0.7);
+    position: relative;
+  }
+
+  .sheet::before {
+    content: "";
+    position: absolute;
+    top: 8px; left: 8px; right: 8px; bottom: 8px;
+    border: 1px solid var(--line);
+    pointer-events: none;
+  }
+
+  .sheet-inner {
+    padding: 40px 40px 36px;
+  }
+
+  .sheet-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 28px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed var(--line);
+    padding-bottom: 16px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px 40px;
+  }
+
+  @media (max-width: 620px) {
+    .grid { grid-template-columns: 1fr; }
+    .sheet-inner { padding: 30px 22px; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 10px; }
+
+  .field label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .field label .val {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  input[type="number"]:focus {
+    border-color: var(--brass);
+    background: #362f44;
+  }
+
+  input[type="number"].out-of-range {
+    border-color: var(--stamp);
+  }
+
+  /* hide native spinner arrows for a cleaner ledger look */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] { -moz-appearance: textfield; }
+
+  .field .range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #837a99;
+  }
+
+  .field .range-labels.warn { color: var(--stamp); }
+
+  .actions {
+    margin-top: 36px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  button#appraise {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 14px 26px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  button#appraise:hover { background: var(--brass-dark); }
+  button#appraise:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  .reset-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-decoration: underline;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .result {
+    margin-top: 40px;
+    border-top: 2px solid var(--ink);
+    padding-top: 28px;
+    display: none;
+  }
+
+  .result.show { display: block; animation: rise 0.4s ease; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .result-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+
+  .result-value {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(38px, 6vw, 58px);
+    line-height: 1;
+  }
+
+  .stamp {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--stamp);
+    border: 1.5px solid var(--stamp);
+    padding: 8px 14px;
+    transform: rotate(-3deg);
+    white-space: nowrap;
+  }
+
+  .result-note {
+    margin-top: 18px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    max-width: 60ch;
+  }
+
+  footer {
+    margin-top: 40px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+    border-top: 1px dashed var(--line);
+    padding-top: 20px;
+  }
+
+  footer a { color: var(--brass-dark); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>House Price Estimator</h1>
+    </div>
+  </header>
+
+  <p class="intro">
+    Fill in the details below and it'll guess a price. It's running a linear
+    regression model trained on California housing data.
+  </p>
+
+  <div class="sheet">
+    <div class="sheet-inner">
+      <div class="sheet-title">
+        <span>Property Details</span>
+        <span>8 fields</span>
+      </div>
+
+      <div class="grid" id="fields"></div>
+
+      <div class="actions">
+        <button id="appraise">Get an estimate</button>
+        <button class="reset-link" id="reset">Reset fields</button>
+      </div>
+
+      <div class="result" id="result">
+        <div class="result-row">
+          <div>
+            <div class="result-label">Estimated price</div>
+            <div class="result-value" id="resultValue">$0</div>
+          </div>
+          <div class="stamp">just a guess</div>
+        </div>
+        <p class="result-note" id="resultNote"></p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Model: linear regression, features standardized before scoring, trained
+    on the California Housing dataset.<br>
+    The full training code (plus a Random Forest comparison and evaluation
+    metrics) is in
+    <a href="../house_price_prediction.py">house_price_prediction.py</a>.
+  </footer>
+
+</div>
+
+<script>
+// Coefficients extracted from the trained scikit-learn Linear Regression
+// model (see house_price_prediction.py). Standardize each input with
+// (x - mean) / scale, then take the dot product with the coefficients
+// and add the intercept.
+const MODEL = {
+  feature_names: ["MedInc","HouseAge","AveRooms","AveBedrms","Population","AveOccup","Latitude","Longitude"],
+  mean:  [5.041957325574442, 25.72847450140634, 5.982052789473073, 1.1933734435737489, 2583.535738058264, 2.9964598343993094, 37.33790632659286, -119.289870308622],
+  scale: [2.23372556451242, 14.577375284452053, 1.2041945616145253, 0.2868298985481403, 1375.9218199983875, 0.6860374262530203, 2.8005813097247816, 2.899908356713797],
+  coef:  [0.9467016783581896, -0.12344689830411965, 0.02879564775593366, -0.004957593998997595, -0.0038016431831075647, -0.002694582738523771, -0.019680684218814234, -0.012430009617529308],
+  intercept: 2.536210866374993
+};
+
+const FIELD_META = {
+  MedInc:      { label: "Median income (× $10,000)", min: 0.5, max: 15, step: 0.1, default: 5.0 },
+  HouseAge:    { label: "House age (years)",           min: 1,   max: 52, step: 1,   default: 20 },
+  AveRooms:    { label: "Average rooms / household",    min: 2,   max: 10, step: 0.1, default: 6.0 },
+  AveBedrms:   { label: "Average bedrooms / household", min: 0.5, max: 2.5, step: 0.05, default: 1.0 },
+  Population:  { label: "Block population",             min: 100, max: 5000, step: 50, default: 1000 },
+  AveOccup:    { label: "Average occupants / household",min: 1,   max: 6,  step: 0.1, default: 3.0 },
+  Latitude:    { label: "Latitude",                     min: 32.5,max: 42, step: 0.05, default: 34.05 },
+  Longitude:   { label: "Longitude",                    min: -124.3, max: -114.3, step: 0.05, default: -118.25 }
+};
+
+const fieldsEl = document.getElementById('fields');
+
+MODEL.feature_names.forEach(name => {
+  const meta = FIELD_META[name];
+  const field = document.createElement('div');
+  field.className = 'field';
+  field.innerHTML = `
+    <label for="${name}">${meta.label}</label>
+    <input type="number" id="${name}" step="${meta.step}" value="${meta.default}" inputmode="decimal">
+    <div class="range-labels" id="${name}-hint"><span>Range: ${meta.min} to ${meta.max}</span></div>
+  `;
+  fieldsEl.appendChild(field);
+
+  const input = field.querySelector('input');
+  const hint = field.querySelector('.range-labels');
+
+  // Prevent the browser's default "scroll to change value" behavior on number inputs
+  input.addEventListener('wheel', (e) => { input.blur(); }, { passive: true });
+
+  const checkRange = () => {
+    const v = parseFloat(input.value);
+    const outOfRange = isNaN(v) || v < meta.min || v > meta.max;
+    input.classList.toggle('out-of-range', outOfRange);
+    hint.classList.toggle('warn', outOfRange);
+    hint.querySelector('span').textContent = outOfRange
+      ? `Outside the range (${meta.min} to ${meta.max}), the estimate gets shakier out here`
+      : `Range: ${meta.min} to ${meta.max}`;
+  };
+
+  input.addEventListener('input', checkRange);
+});
+
+function predict() {
+  let z = MODEL.intercept;
+  let anyOutOfRange = false;
+  MODEL.feature_names.forEach((name, i) => {
+    const raw = parseFloat(document.getElementById(name).value);
+    const meta = FIELD_META[name];
+    if (raw < meta.min || raw > meta.max) anyOutOfRange = true;
+    const standardized = (raw - MODEL.mean[i]) / MODEL.scale[i];
+    z += standardized * MODEL.coef[i];
+  });
+  const usd = Math.max(z, 0.05) * 100000;
+  const inr = usd * 83; // rough USD to INR conversion for display purposes
+  return { price: inr, anyOutOfRange };
+}
+
+document.getElementById('appraise').addEventListener('click', () => {
+  const emptyField = MODEL.feature_names.find(name => document.getElementById(name).value === '' || isNaN(parseFloat(document.getElementById(name).value)));
+  const resultEl = document.getElementById('result');
+  const valueEl = document.getElementById('resultValue');
+  const noteEl = document.getElementById('resultNote');
+
+  if (emptyField) {
+    valueEl.textContent = '—';
+    noteEl.textContent = `Need a number for "${FIELD_META[emptyField].label}" first.`;
+    resultEl.classList.add('show');
+    return;
+  }
+
+  const { price, anyOutOfRange } = predict();
+  valueEl.textContent = price.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+  noteEl.textContent = anyOutOfRange
+    ? "Heads up, one of those values is outside what the model was trained on, so this guess is less trustworthy than usual."
+    : "Rough estimate from a linear model, not a real appraisal. Don't make any actual decisions based on it.";
+  resultEl.classList.add('show');
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+  MODEL.feature_names.forEach(name => {
+    const meta = FIELD_META[name];
+    const input = document.getElementById(name);
+    input.value = meta.default;
+    input.classList.remove('out-of-range');
+    const hint = document.getElementById(name + '-hint');
+    hint.classList.remove('warn');
+    hint.querySelector('span').textContent = `Range: ${meta.min} to ${meta.max}`;
+  });
+  document.getElementById('result').classList.remove('show');
+});
+</script>
+</body>
+</html>
