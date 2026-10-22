@@ -1,5 +1,7 @@
 # House Price Prediction
 
+Live at: https://alfieeya.github.io/house-price-prediction/
+
 A machine learning model that predicts house prices based on input parameters
 like median income, number of rooms, house age, and location.
 
@@ -34,56 +36,6 @@ like median income, number of rooms, house age, and location.
 | Latitude / Longitude | Location |
 
 Target: `PRICE` — median house value (in $100,000s)
-
-## Setup
-
-```bash
-pip install -r requirements.txt
-python house_price_prediction.py
-```
-
-This will print dataset stats and model metrics to the console, and save these
-files in the project folder:
-
-- `correlation_heatmap.png`
-- `price_distribution.png`
-- `feature_importance.png`
-- `actual_vs_predicted.png`
-- `house_price_model.joblib` (trained model)
-- `scaler.joblib` (feature scaler, needed to preprocess new inputs the same way)
-
-## A note on offline environments
-
-`fetch_california_housing()` downloads data on first use, so it needs
-internet access. If it can't reach the internet, the script automatically
-falls back to a synthetic dataset with the same feature structure so the
-pipeline still runs end-to-end. If you have internet access, it'll use the
-real dataset automatically — no code changes needed.
-
-## Using the saved model on new data
-
-```python
-import joblib
-import pandas as pd
-
-model = joblib.load("house_price_model.joblib")
-scaler = joblib.load("scaler.joblib")
-
-new_house = pd.DataFrame([{
-    "MedInc": 5.0,
-    "HouseAge": 20.0,
-    "AveRooms": 6.0,
-    "AveBedrms": 1.0,
-    "Population": 1000.0,
-    "AveOccup": 3.0,
-    "Latitude": 34.05,
-    "Longitude": -118.25,
-}])
-
-scaled = scaler.transform(new_house)
-predicted_price = model.predict(scaled)[0] * 100000
-print(f"Predicted price: ${predicted_price:,.2f}")
-```
 
 ## Possible next steps
 
